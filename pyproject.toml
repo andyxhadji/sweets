@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sweets"
+version = "0.1.0"
+description = "A Vestaboard Platform"
+requires-python = ">=3.11"
+dependencies = [
+    "requests>=2.31.0",
+    "pyyaml>=6.0",
+    "flask>=3.0.0",
+    "textual>=0.50.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "responses>=0.25.0",
+]
+
+[project.scripts]
+sweets-web = "sweets.web.app:main"
+sweets-tui = "sweets.tui.app:main"

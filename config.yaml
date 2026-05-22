@@ -1,0 +1,14 @@
+api:
+  type: cloud
+  host: vestaboard.local
+
+default_mode: clock
+
+modes:
+  clock:
+    format: 12h
+    show_seconds: false
+
+web:
+  host: 127.0.0.1
+  port: 5000
