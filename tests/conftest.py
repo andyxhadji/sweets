@@ -1,7 +1,6 @@
 """Shared test fixtures."""
 
 from pathlib import Path
-import tempfile
 
 import pytest
 import responses
@@ -49,7 +48,7 @@ def test_config() -> Config:
 
 
 @pytest.fixture
-def temp_config_files(tmp_path: Path):
+def temp_config_files(tmp_path: Path) -> tuple[Path, Path]:
     """Create temporary config files for testing."""
     config_path = tmp_path / "config.yaml"
     secrets_path = tmp_path / "secrets.yaml"
