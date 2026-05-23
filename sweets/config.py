@@ -42,8 +42,6 @@ def load_config(
     """
     if config_path is None:
         config_path = Path("config.yaml")
-    if secrets_path is None:
-        secrets_path = Path("secrets.yaml")
 
     # Load main config
     if not config_path.exists():
@@ -52,11 +50,21 @@ def load_config(
     with open(config_path) as f:
         config_data = yaml.safe_load(f) or {}
 
-    # Load secrets (optional - may not exist yet)
+    # Load secrets - check multiple locations in order of priority:
+    # 1. Explicit path passed in
+    # 2. Local ./secrets.yaml
+    # 3. User config dir ~/.config/sweets/secrets.yaml
     secrets_data: dict[str, Any] = {}
-    if secrets_path.exists():
-        with open(secrets_path) as f:
-            secrets_data = yaml.safe_load(f) or {}
+    secrets_locations = [
+        secrets_path,
+        Path("secrets.yaml"),
+        Path.home() / ".config" / "sweets" / "secrets.yaml",
+    ]
+    for loc in secrets_locations:
+        if loc and loc.exists():
+            with open(loc) as f:
+                secrets_data = yaml.safe_load(f) or {}
+            break
 
     # Build config object
     board_config = config_data.get("board", {})

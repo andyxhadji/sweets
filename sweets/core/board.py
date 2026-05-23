@@ -46,10 +46,18 @@ class Board:
     def from_text(cls, message: str, rows: int = DEFAULT_ROWS, cols: int = DEFAULT_COLS) -> "Board":
         """Create a board from text with word wrapping and centering."""
         board = cls(rows=rows, cols=cols)
-        words = message.upper().split()
+        words = message.split()
 
         if not words:
             return board
+
+        def display_len(s: str) -> int:
+            """Calculate display length, treating {token} as 1 character."""
+            import re
+            # Remove {token} patterns and count as 1 each
+            tokens = re.findall(r'\{[^}]+\}', s)
+            base = re.sub(r'\{[^}]+\}', '', s)
+            return len(base) + len(tokens)
 
         # Build lines that fit within cols
         lines: list[str] = []
@@ -58,7 +66,7 @@ class Board:
         for word in words:
             if not current_line:
                 current_line = word
-            elif len(current_line) + 1 + len(word) <= cols:
+            elif display_len(current_line) + 1 + display_len(word) <= cols:
                 current_line += " " + word
             else:
                 lines.append(current_line)
