@@ -70,8 +70,8 @@ function addToken(name) {
 <div class="section">
     <h2>Mode Control</h2>
     <div class="inline-form">
-        <form action="{{ url_for('activate_mode', slug='') }}" method="post" id="mode-form">
-            <select name="mode" id="mode-select" onchange="this.form.action = '{{ url_for('activate_mode', slug='') }}' + this.value; updateIllustrationVisibility();">
+        <form method="post" id="mode-form">
+            <select name="mode" id="mode-select" onchange="updateIllustrationVisibility();">
                 <option value="">Select a mode...</option>
                 {% for slug, mode_class in modes.items() %}
                     <option value="{{ slug }}" {% if status.active_mode == slug %}selected{% endif %}>
@@ -79,7 +79,7 @@ function addToken(name) {
                     </option>
                 {% endfor %}
             </select>
-            <button type="submit">Activate</button>
+            <button type="submit" onclick="this.form.action = '/mode/' + document.getElementById('mode-select').value; return document.getElementById('mode-select').value !== '';">Activate</button>
         </form>
         <form action="{{ url_for('set_illustration', slug='') }}" method="post" id="illustration-form" style="display: none;">
             <select name="illustration" id="illustration-select" onchange="this.form.action = '{{ url_for('set_illustration', slug='') }}' + this.value;">

@@ -13,6 +13,11 @@ class RateLimitError(Exception):
     pass
 
 
+class QuietHoursError(Exception):
+    """Raised when Vestaboard is in quiet hours mode."""
+    pass
+
+
 class VestaboardClient(ABC):
     """Abstract base class for Vestaboard API clients."""
 
@@ -64,7 +69,25 @@ class CloudClient(VestaboardClient):
         Raises:
             RateLimitError: If rate limited and retry=False
         """
-        payload = {"characters": board.to_array()}
+        # Cloud API always expects 6x22 array, even for Vestaboard Note (3x15)
+        # Note displays rows 1-3 and cols 3-17 of the 6x22 grid
+        api_array = [[0] * DEFAULT_COLS for _ in range(DEFAULT_ROWS)]
+        board_array = board.to_array()
+
+        # Detect if this is a Note-sized board (3x15) and offset accordingly
+        is_note = board.num_rows == 3 and board.num_cols == 15
+        row_offset = 1 if is_note else 0
+        col_offset = 3 if is_note else 0
+
+        for i, row in enumerate(board_array[:DEFAULT_ROWS]):
+            target_row = i + row_offset
+            if target_row >= DEFAULT_ROWS:
+                break
+            for j, val in enumerate(row[:DEFAULT_COLS]):
+                target_col = j + col_offset
+                if target_col < DEFAULT_COLS:
+                    api_array[target_row][target_col] = val
+        payload = {"characters": api_array}
         response = requests.post(
             f"{self.base_url}/",
             headers=self._headers(),
@@ -84,6 +107,9 @@ class CloudClient(VestaboardClient):
                     raise RateLimitError("Rate limited by Vestaboard API. Please wait ~15 seconds between writes.")
             else:
                 raise RateLimitError("Rate limited by Vestaboard API. Please wait ~15 seconds between writes.")
+
+        if response.status_code == 423:
+            raise QuietHoursError("Vestaboard is in quiet hours mode.")
 
         response.raise_for_status()
         return True

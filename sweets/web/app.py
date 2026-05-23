@@ -3,7 +3,7 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 
 from sweets.config import load_config
-from sweets.core.api import CloudClient, LocalClient, RateLimitError
+from sweets.core.api import CloudClient, LocalClient, RateLimitError, QuietHoursError
 from sweets.scheduler import Scheduler
 from sweets.modes import get_all_modes
 from sweets.modes.illustrations import IllustrationsMode, ILLUSTRATIONS
@@ -72,6 +72,8 @@ def send_message():
             sched.send_message(text)
         except RateLimitError:
             flash("Rate limited - please wait ~15 seconds between messages", "error")
+        except QuietHoursError:
+            flash("Vestaboard is in quiet hours mode", "error")
     return redirect(url_for("index"))
 
 
