@@ -40,8 +40,11 @@ class ReflectionsMode(Mode):
         if not self.reflections_path.exists():
             return []
 
-        with open(self.reflections_path) as f:
-            data = yaml.safe_load(f)
+        try:
+            with open(self.reflections_path) as f:
+                data = yaml.safe_load(f)
+        except yaml.YAMLError:
+            return []
 
         if not data or not isinstance(data, list):
             return []
