@@ -71,7 +71,7 @@ function addToken(name) {
     <h2>Mode Control</h2>
     <div class="inline-form">
         <form action="{{ url_for('activate_mode', slug='') }}" method="post" id="mode-form">
-            <select name="mode" onchange="this.form.action = '{{ url_for('activate_mode', slug='') }}' + this.value">
+            <select name="mode" id="mode-select" onchange="this.form.action = '{{ url_for('activate_mode', slug='') }}' + this.value; updateIllustrationVisibility();">
                 <option value="">Select a mode...</option>
                 {% for slug, mode_class in modes.items() %}
                     <option value="{{ slug }}" {% if status.active_mode == slug %}selected{% endif %}>
@@ -81,9 +81,33 @@ function addToken(name) {
             </select>
             <button type="submit">Activate</button>
         </form>
+        <form action="{{ url_for('set_illustration', slug='') }}" method="post" id="illustration-form" style="display: none;">
+            <select name="illustration" id="illustration-select" onchange="this.form.action = '{{ url_for('set_illustration', slug='') }}' + this.value;">
+                {% for slug, name in illustrations %}
+                    <option value="{{ slug }}" {% if current_illustration == slug %}selected{% endif %}>
+                        {{ name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <button type="submit">Set</button>
+        </form>
         <form action="{{ url_for('stop_mode') }}" method="post">
             <button type="submit" class="danger">Stop</button>
         </form>
     </div>
 </div>
+
+<script>
+function updateIllustrationVisibility() {
+    var modeSelect = document.getElementById('mode-select');
+    var illustrationForm = document.getElementById('illustration-form');
+    if (modeSelect.value === 'illustrations') {
+        illustrationForm.style.display = 'inline';
+    } else {
+        illustrationForm.style.display = 'none';
+    }
+}
+// Initialize on page load
+updateIllustrationVisibility();
+</script>
 {% endblock %}
