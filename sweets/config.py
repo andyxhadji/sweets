@@ -44,6 +44,8 @@ def load_config(
         config_path = Path("config.yaml")
     if secrets_path is None:
         secrets_path = Path("secrets.yaml")
+        if not secrets_path.exists():
+            secrets_path = Path.home() / ".config" / "sweets" / "secrets.yaml"
 
     # Load main config
     if not config_path.exists():
