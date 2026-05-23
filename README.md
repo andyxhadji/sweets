@@ -6,6 +6,7 @@ A Python platform for controlling [Vestaboard](https://www.vestaboard.com/) disp
 
 - **Multi-board support** - Works with standard Vestaboard (6x22) and Vestaboard Note (3x15)
 - **Cloud API integration** - Connect via Vestaboard's Cloud API
+- **Local API ready** - Local API client stubbed for future implementation
 - **Extensible mode system** - Add custom display modes with configurable intervals
 - **Built-in Clock mode** - 12h/24h formats with optional seconds display
 - **Terminal UI** - Textual-based TUI with live board preview and controls
@@ -35,8 +36,8 @@ board:
   cols: 22   # 22 for standard, 15 for Note
 
 api:
-  type: cloud  # "cloud" or "local"
-  host: vestaboard.local  # for local API
+  type: cloud  # "cloud" only (local API not yet implemented)
+  # host: vestaboard.local  # for future local API support
 
 default_mode: clock
 
@@ -54,7 +55,7 @@ Create `secrets.yaml` for API credentials:
 
 ```yaml
 cloud_api_token: "your-token-here"
-# local_api_key: "your-local-key"  # for local API
+# local_api_key: "your-local-key"  # for future local API support
 ```
 
 ## Usage
