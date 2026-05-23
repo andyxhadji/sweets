@@ -93,6 +93,11 @@ class Scheduler:
             # Log but don't crash the loop
             print(f"Error writing to board: {e}")
 
+    def force_update(self) -> None:
+        """Force immediate re-render of current mode."""
+        if self.active_mode is not None:
+            self._update()
+
     def _run_loop(self) -> None:
         """Background loop that updates at mode's interval."""
         while self._running and self.active_mode is not None:
