@@ -31,3 +31,17 @@ def test_get_illustrations():
     mode = IllustrationsMode(rows=3, cols=15)
     options = mode.get_illustrations()
     assert ("duck", "Duck") in options
+
+
+def test_configure_default():
+    """Config can set default illustration."""
+    mode = IllustrationsMode(rows=3, cols=15)
+    mode.configure({"default": "duck"})
+    assert mode.current == "duck"
+
+
+def test_configure_empty():
+    """Empty config keeps default."""
+    mode = IllustrationsMode(rows=3, cols=15)
+    mode.configure({})
+    assert mode.current == "duck"

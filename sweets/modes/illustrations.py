@@ -37,6 +37,12 @@ class IllustrationsMode(Mode):
         super().__init__(rows, cols)
         self.current = "duck"
 
+    def configure(self, settings: dict) -> None:
+        """Apply mode-specific settings from config."""
+        default = settings.get("default", "duck")
+        if default in ILLUSTRATIONS:
+            self.current = default
+
     def render(self) -> Board:
         """Render the current illustration to the board."""
         board = Board(rows=self.rows, cols=self.cols)
