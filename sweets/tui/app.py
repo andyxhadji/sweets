@@ -10,6 +10,7 @@ from sweets.core.api import CloudClient, LocalClient
 from sweets.core.characters import codes_to_text
 from sweets.scheduler import Scheduler
 from sweets.modes import get_all_modes
+from sweets.modes.illustrations import ILLUSTRATIONS
 
 
 class BoardDisplay(Static):
@@ -100,6 +101,10 @@ class SweetsApp(App):
     #stop-btn {
         background: red;
     }
+
+    #illustration-select {
+        display: none;
+    }
     """
 
     BINDINGS = [
@@ -133,6 +138,11 @@ class SweetsApp(App):
             modes = get_all_modes()
             options = [(mode_cls.name, slug) for slug, mode_cls in modes.items()]
             yield Select(options, id="mode-select", prompt="Select mode")
+
+            # Illustration selector (hidden by default)
+            ill_options = [(ill.name, slug) for slug, ill in ILLUSTRATIONS.items()]
+            yield Select(ill_options, id="illustration-select", prompt="Select illustration")
+
             yield Button("Activate", id="activate-btn", variant="success")
             yield Button("Stop", id="stop-btn", variant="error")
 
@@ -157,6 +167,20 @@ class SweetsApp(App):
         last_update = status.get("last_update") or "Never"
         status_label.update(f"Mode: {mode_name} | Updated: {last_update}")
 
+    def on_select_changed(self, event: Select.Changed) -> None:
+        """Handle select widget changes."""
+        if event.select.id == "mode-select":
+            ill_select = self.query_one("#illustration-select", Select)
+            if event.value == "illustrations":
+                ill_select.styles.display = "block"
+            else:
+                ill_select.styles.display = "none"
+        elif event.select.id == "illustration-select":
+            if self.scheduler.active_mode and hasattr(self.scheduler.active_mode, "set_illustration"):
+                self.scheduler.active_mode.set_illustration(str(event.value))
+                self.scheduler.force_update()
+                self.update_display()
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
         if event.button.id == "send-btn":
@@ -171,6 +195,12 @@ class SweetsApp(App):
             select = self.query_one("#mode-select", Select)
             if select.value and select.value != Select.BLANK:
                 self.scheduler.start(str(select.value))
+                # Show/hide illustration selector
+                ill_select = self.query_one("#illustration-select", Select)
+                if select.value == "illustrations":
+                    ill_select.styles.display = "block"
+                else:
+                    ill_select.styles.display = "none"
                 self.update_display()
 
         elif event.button.id == "stop-btn":

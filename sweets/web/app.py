@@ -6,6 +6,7 @@ from sweets.config import load_config
 from sweets.core.api import CloudClient, LocalClient, RateLimitError, QuietHoursError
 from sweets.scheduler import Scheduler
 from sweets.modes import get_all_modes
+from sweets.modes.illustrations import IllustrationsMode, ILLUSTRATIONS
 
 app = Flask(__name__)
 app.secret_key = "sweets-vestaboard"  # For flash messages
@@ -34,6 +35,14 @@ def index():
     if sched.get_last_board() is not None:
         board_display = sched.get_last_board().to_array()
 
+    # Get illustrations for dropdown
+    illustrations = [(slug, ill.name) for slug, ill in ILLUSTRATIONS.items()]
+
+    # Get current illustration if in illustrations mode
+    current_illustration = None
+    if sched.active_mode and sched.active_mode.slug == "illustrations":
+        current_illustration = sched.active_mode.current
+
     return render_template(
         "index.html",
         status=status,
@@ -41,6 +50,8 @@ def index():
         board=board_display,
         board_rows=sched.board_rows,
         board_cols=sched.board_cols,
+        illustrations=illustrations,
+        current_illustration=current_illustration,
     )
 
 
@@ -74,6 +85,16 @@ def activate_mode(slug: str):
         sched.start(slug)
     except KeyError:
         pass  # Invalid mode, just redirect
+    return redirect(url_for("index"))
+
+
+@app.route("/illustration/<slug>", methods=["POST"])
+def set_illustration(slug: str):
+    """Change the current illustration."""
+    sched = get_scheduler()
+    if sched.active_mode and hasattr(sched.active_mode, "set_illustration"):
+        sched.active_mode.set_illustration(slug)
+        sched.force_update()
     return redirect(url_for("index"))
 
 
