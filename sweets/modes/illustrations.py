@@ -45,3 +45,12 @@ class IllustrationsMode(Mode):
             for row_idx, row_codes in enumerate(illustration.grid):
                 board.set_row(row_idx, row_codes)
         return board
+
+    def set_illustration(self, slug: str) -> None:
+        """Change the current illustration."""
+        if slug in ILLUSTRATIONS:
+            self.current = slug
+
+    def get_illustrations(self) -> list[tuple[str, str]]:
+        """Return list of (slug, name) for UI dropdowns."""
+        return [(slug, ill.name) for slug, ill in ILLUSTRATIONS.items()]
