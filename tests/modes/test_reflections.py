@@ -5,6 +5,8 @@ from unittest.mock import patch
 
 import pytest
 
+from sweets.core.characters import codes_to_text
+
 
 def test_same_date_returns_same_reflection(tmp_path):
     """Same date seed should always select the same reflection."""
@@ -54,3 +56,16 @@ def test_different_dates_select_differently(tmp_path):
     # At least some should differ (extremely unlikely all 10 match)
     unique_results = [str(r) for r in results]
     assert len(set(unique_results)) > 1
+
+
+def test_missing_file_shows_placeholder(tmp_path):
+    """Missing reflections file should show ADD REFLECTIONS."""
+    from sweets.modes.reflections import ReflectionsMode
+
+    mode = ReflectionsMode()
+    mode.reflections_path = tmp_path / "nonexistent.yaml"
+
+    board = mode.render()
+    all_text = " ".join(codes_to_text(row) for row in board.to_array())
+
+    assert "ADD REFLECTIONS" in all_text
