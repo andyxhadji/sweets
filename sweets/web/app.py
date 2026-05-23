@@ -1,13 +1,14 @@
 """Flask web application for Vestaboard control."""
 
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 
 from sweets.config import load_config
-from sweets.core.api import CloudClient, LocalClient
+from sweets.core.api import CloudClient, LocalClient, RateLimitError
 from sweets.scheduler import Scheduler
 from sweets.modes import get_all_modes
 
 app = Flask(__name__)
+app.secret_key = "sweets-vestaboard"  # For flash messages
 
 # Global scheduler instance (initialized in main)
 scheduler: Scheduler | None = None
@@ -38,6 +39,8 @@ def index():
         status=status,
         modes=modes,
         board=board_display,
+        board_rows=sched.board_rows,
+        board_cols=sched.board_cols,
     )
 
 
@@ -54,7 +57,10 @@ def send_message():
     text = request.form.get("text", "").strip()
     if text:
         sched = get_scheduler()
-        sched.send_message(text)
+        try:
+            sched.send_message(text)
+        except RateLimitError:
+            flash("Rate limited - please wait ~15 seconds between messages", "error")
     return redirect(url_for("index"))
 
 
@@ -93,7 +99,12 @@ def main():
         client = CloudClient(api_token=config.cloud_api_token)
 
     # Create scheduler
-    scheduler = Scheduler(client, mode_settings=config.modes)
+    scheduler = Scheduler(
+        client,
+        mode_settings=config.modes,
+        board_rows=config.board_rows,
+        board_cols=config.board_cols,
+    )
 
     # Start default mode if configured
     if config.default_mode:
@@ -102,8 +113,8 @@ def main():
         except KeyError:
             pass
 
-    # Run Flask
-    app.run(host=config.web_host, port=config.web_port, debug=True)
+    # Run Flask (use_reloader=False to avoid duplicate scheduler instances)
+    app.run(host=config.web_host, port=config.web_port, debug=True, use_reloader=False)
 
 
 if __name__ == "__main__":

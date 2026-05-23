@@ -14,7 +14,8 @@ class ClockMode(Mode):
     slug = "clock"
     interval = 60
 
-    def __init__(self) -> None:
+    def __init__(self, rows: int = 6, cols: int = 22) -> None:
+        super().__init__(rows, cols)
         self.format_12h = True
         self.show_seconds = False
 
@@ -42,7 +43,9 @@ class ClockMode(Mode):
         # Remove leading zero from hour
         time_str = time_str.lstrip("0")
 
-        board = Board()
-        board.center_text(2, time_str)
+        board = Board(rows=self.rows, cols=self.cols)
+        # Center vertically
+        center_row = self.rows // 2
+        board.center_text(center_row, time_str)
 
         return board

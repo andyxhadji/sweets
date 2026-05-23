@@ -11,6 +11,8 @@ import yaml
 class Config:
     """Application configuration."""
 
+    board_rows: int = 6
+    board_cols: int = 22
     api_type: str = "cloud"
     api_host: str = "vestaboard.local"
     cloud_api_token: str = ""
@@ -57,10 +59,13 @@ def load_config(
             secrets_data = yaml.safe_load(f) or {}
 
     # Build config object
+    board_config = config_data.get("board", {})
     api_config = config_data.get("api", {})
     web_config = config_data.get("web", {})
 
     config = Config(
+        board_rows=board_config.get("rows", 6),
+        board_cols=board_config.get("cols", 22),
         api_type=api_config.get("type", "cloud"),
         api_host=api_config.get("host", "vestaboard.local"),
         cloud_api_token=secrets_data.get("cloud_api_token", ""),

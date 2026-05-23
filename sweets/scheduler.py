@@ -14,9 +14,17 @@ from sweets.modes.base import Mode
 class Scheduler:
     """Manages the single active mode and its update loop."""
 
-    def __init__(self, client: VestaboardClient, mode_settings: dict[str, dict[str, Any]] | None = None) -> None:
+    def __init__(
+        self,
+        client: VestaboardClient,
+        mode_settings: dict[str, dict[str, Any]] | None = None,
+        board_rows: int = 6,
+        board_cols: int = 22,
+    ) -> None:
         self.client = client
         self.mode_settings = mode_settings or {}
+        self.board_rows = board_rows
+        self.board_cols = board_cols
         self.active_mode: Mode | None = None
         self._running = False
         self._thread: threading.Thread | None = None
@@ -27,17 +35,19 @@ class Scheduler:
         """Activate a mode and begin background update loop."""
         self.stop()  # Stop any existing mode
 
-        mode = get_mode(mode_slug)
+        mode = get_mode(mode_slug, rows=self.board_rows, cols=self.board_cols)
         settings = self.mode_settings.get(mode_slug, {})
         mode.configure(settings)
 
         self.active_mode = mode
         self._running = True
+
+        # Render locally for preview (don't write to board yet to avoid rate limits)
+        self._last_board = mode.render()
+        self._last_update = datetime.now()
+
         self._thread = threading.Thread(target=self._run_loop, daemon=True)
         self._thread.start()
-
-        # Immediate first update
-        self._update()
 
     def stop(self) -> None:
         """Stop the current mode."""
@@ -63,7 +73,7 @@ class Scheduler:
 
     def send_message(self, text: str) -> bool:
         """Send a one-off message (doesn't affect active mode)."""
-        board = Board.from_text(text)
+        board = Board.from_text(text, rows=self.board_rows, cols=self.board_cols)
         self._last_board = board
         self._last_update = datetime.now()
         return self.client.write(board)
@@ -86,6 +96,11 @@ class Scheduler:
     def _run_loop(self) -> None:
         """Background loop that updates at mode's interval."""
         while self._running and self.active_mode is not None:
-            time.sleep(self.active_mode.interval)
+            # Sleep in small increments to allow quick shutdown
+            interval = self.active_mode.interval
+            for _ in range(interval):
+                if not self._running:
+                    return
+                time.sleep(1)
             if self._running and self.active_mode is not None:
                 self._update()

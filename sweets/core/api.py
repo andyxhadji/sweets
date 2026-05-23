@@ -1,10 +1,16 @@
 """Vestaboard API client implementations."""
 
+import time
 from abc import ABC, abstractmethod
 
 import requests
 
-from sweets.core.board import Board, ROWS, COLS
+from sweets.core.board import Board, DEFAULT_ROWS, DEFAULT_COLS
+
+
+class RateLimitError(Exception):
+    """Raised when Vestaboard API rate limit is hit."""
+    pass
 
 
 class VestaboardClient(ABC):
@@ -34,7 +40,7 @@ class CloudClient(VestaboardClient):
             "Content-Type": "application/json",
         }
 
-    def read(self) -> Board:
+    def read(self, rows: int = DEFAULT_ROWS, cols: int = DEFAULT_COLS) -> Board:
         """Get current board state from API."""
         response = requests.get(f"{self.base_url}/", headers=self._headers())
         response.raise_for_status()
@@ -42,20 +48,43 @@ class CloudClient(VestaboardClient):
         data = response.json()
         layout = data.get("currentMessage", {}).get("layout", [])
 
-        board = Board()
-        for i, row in enumerate(layout[:ROWS]):
-            board.set_row(i, row[:COLS])
+        board = Board(rows=rows, cols=cols)
+        for i, row in enumerate(layout[:rows]):
+            board.set_row(i, row[:cols])
 
         return board
 
-    def write(self, board: Board) -> bool:
-        """Send board state to API."""
+    def write(self, board: Board, retry: bool = True) -> bool:
+        """Send board state to API.
+
+        Args:
+            board: Board to send
+            retry: If True, wait and retry on rate limit (409)
+
+        Raises:
+            RateLimitError: If rate limited and retry=False
+        """
         payload = {"characters": board.to_array()}
         response = requests.post(
             f"{self.base_url}/",
             headers=self._headers(),
             json=payload,
         )
+
+        if response.status_code == 409:
+            if retry:
+                # Rate limited - wait and retry once
+                time.sleep(15)
+                response = requests.post(
+                    f"{self.base_url}/",
+                    headers=self._headers(),
+                    json=payload,
+                )
+                if response.status_code == 409:
+                    raise RateLimitError("Rate limited by Vestaboard API. Please wait ~15 seconds between writes.")
+            else:
+                raise RateLimitError("Rate limited by Vestaboard API. Please wait ~15 seconds between writes.")
+
         response.raise_for_status()
         return True
 

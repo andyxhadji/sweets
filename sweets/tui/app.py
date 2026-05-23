@@ -13,11 +13,13 @@ from sweets.modes import get_all_modes
 
 
 class BoardDisplay(Static):
-    """Widget displaying the 6x22 Vestaboard grid."""
+    """Widget displaying the Vestaboard grid."""
 
-    def __init__(self) -> None:
+    def __init__(self, rows: int = 6, cols: int = 22) -> None:
         super().__init__()
         self._board: list[list[int]] | None = None
+        self._rows = rows
+        self._cols = cols
 
     def set_board(self, board: list[list[int]] | None) -> None:
         """Update the displayed board."""
@@ -27,7 +29,7 @@ class BoardDisplay(Static):
     def render(self) -> str:
         """Render the board as text."""
         if self._board is None:
-            return "\n".join(["." * 22] * 6)
+            return "\n".join(["." * self._cols] * self._rows)
 
         lines = []
         for row in self._board:
@@ -107,9 +109,11 @@ class SweetsApp(App):
         Binding("s", "stop_mode", "Stop"),
     ]
 
-    def __init__(self, scheduler: Scheduler) -> None:
+    def __init__(self, scheduler: Scheduler, board_rows: int = 6, board_cols: int = 22) -> None:
         super().__init__()
         self.scheduler = scheduler
+        self.board_rows = board_rows
+        self.board_cols = board_cols
 
     def compose(self) -> ComposeResult:
         """Create child widgets."""
@@ -117,7 +121,7 @@ class SweetsApp(App):
 
         with Container(id="board-container"):
             yield Label("Board Preview", id="board-label")
-            yield BoardDisplay()
+            yield BoardDisplay(rows=self.board_rows, cols=self.board_cols)
             yield Label("", id="status")
 
         with Container(id="controls"):
@@ -201,7 +205,12 @@ def main():
         client = CloudClient(api_token=config.cloud_api_token)
 
     # Create scheduler
-    scheduler = Scheduler(client, mode_settings=config.modes)
+    scheduler = Scheduler(
+        client,
+        mode_settings=config.modes,
+        board_rows=config.board_rows,
+        board_cols=config.board_cols,
+    )
 
     # Start default mode if configured
     if config.default_mode:
@@ -211,7 +220,7 @@ def main():
             pass
 
     # Run app
-    app = SweetsApp(scheduler)
+    app = SweetsApp(scheduler, board_rows=config.board_rows, board_cols=config.board_cols)
     app.run()
 
 

@@ -36,8 +36,13 @@ def get_all_modes() -> dict[str, Type[Mode]]:
     return _registry.copy()
 
 
-def get_mode(slug: str) -> Mode:
+def get_mode(slug: str, rows: int = 6, cols: int = 22) -> Mode:
     """Instantiate a mode by slug.
+
+    Args:
+        slug: Mode identifier
+        rows: Board rows
+        cols: Board columns
 
     Raises:
         KeyError: If mode slug not found
@@ -48,4 +53,4 @@ def get_mode(slug: str) -> Mode:
     if slug not in _registry:
         raise KeyError(f"Unknown mode: {slug}")
 
-    return _registry[slug]()
+    return _registry[slug](rows=rows, cols=cols)

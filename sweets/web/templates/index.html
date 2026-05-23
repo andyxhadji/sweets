@@ -3,12 +3,14 @@
 {% block content %}
 <div class="section">
     <h2>Board Preview</h2>
-    <div class="board">
+    <div class="board" style="--board-cols: {{ board_cols }};">
         {% if board %}
             {% for row in board %}
                 {% for code in row %}
                     {% if code == 0 %}
                         <div class="cell"></div>
+                    {% elif code == 62 %}
+                        <div class="cell heart">♥</div>
                     {% elif code >= 63 and code <= 70 %}
                         <div class="cell color-{{ code }}"></div>
                     {% elif code >= 1 and code <= 26 %}
@@ -23,8 +25,8 @@
                 {% endfor %}
             {% endfor %}
         {% else %}
-            {% for _ in range(6) %}
-                {% for _ in range(22) %}
+            {% for _ in range(board_rows) %}
+                {% for _ in range(board_cols) %}
                     <div class="cell"></div>
                 {% endfor %}
             {% endfor %}
@@ -41,10 +43,29 @@
 <div class="section">
     <h2>Send Message</h2>
     <form action="{{ url_for('send_message') }}" method="post">
-        <input type="text" name="text" placeholder="Type your message..." maxlength="132">
+        <input type="text" name="text" id="message-input" placeholder="Type your message..." maxlength="132">
         <button type="submit">Send</button>
     </form>
+    <div class="token-buttons">
+        <button type="button" class="token-btn color-red" onclick="addToken('red')"></button>
+        <button type="button" class="token-btn color-orange" onclick="addToken('orange')"></button>
+        <button type="button" class="token-btn color-yellow" onclick="addToken('yellow')"></button>
+        <button type="button" class="token-btn color-green" onclick="addToken('green')"></button>
+        <button type="button" class="token-btn color-blue" onclick="addToken('blue')"></button>
+        <button type="button" class="token-btn color-violet" onclick="addToken('violet')"></button>
+        <button type="button" class="token-btn color-white" onclick="addToken('white')"></button>
+        <button type="button" class="token-btn color-black" onclick="addToken('black')"></button>
+        <button type="button" class="token-btn heart" onclick="addToken('heart')">♥</button>
+    </div>
 </div>
+
+<script>
+function addToken(name) {
+    const input = document.getElementById('message-input');
+    input.value += '{' + name + '}';
+    input.focus();
+}
+</script>
 
 <div class="section">
     <h2>Mode Control</h2>

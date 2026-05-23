@@ -1,8 +1,12 @@
+board:
+  rows: 3
+  cols: 15
+
 api:
   type: cloud
   host: vestaboard.local
 
-default_mode: clock
+default_mode:
 
 modes:
   clock:
