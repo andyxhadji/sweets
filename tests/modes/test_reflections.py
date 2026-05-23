@@ -85,3 +85,24 @@ def test_empty_file_shows_placeholder(tmp_path):
     all_text = " ".join(codes_to_text(row) for row in board.to_array())
 
     assert "ADD REFLECTIONS" in all_text
+
+
+def test_single_reflection_always_returned(tmp_path):
+    """Single reflection should always be selected."""
+    from sweets.modes.reflections import ReflectionsMode
+
+    reflections_file = tmp_path / "reflections.yaml"
+    reflections_file.write_text("- Only one reflection\n")
+
+    mode = ReflectionsMode()
+    mode.reflections_path = reflections_file
+
+    # Check multiple dates all return the same (only) reflection
+    for day_offset in range(5):
+        test_date = date(2026, 1, 1 + day_offset)
+        with patch("sweets.modes.reflections.date") as mock_date:
+            mock_date.today.return_value = test_date
+            mock_date.side_effect = lambda *args, **kwargs: date(*args, **kwargs)
+            board = mode.render()
+            all_text = " ".join(codes_to_text(row) for row in board.to_array())
+            assert "ONLY ONE REFLECTION" in all_text
