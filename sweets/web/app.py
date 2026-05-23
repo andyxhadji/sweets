@@ -86,6 +86,16 @@ def activate_mode(slug: str):
     return redirect(url_for("index"))
 
 
+@app.route("/illustration/<slug>", methods=["POST"])
+def set_illustration(slug: str):
+    """Change the current illustration."""
+    sched = get_scheduler()
+    if sched.active_mode and hasattr(sched.active_mode, "set_illustration"):
+        sched.active_mode.set_illustration(slug)
+        sched.force_update()
+    return redirect(url_for("index"))
+
+
 @app.route("/stop", methods=["POST"])
 def stop_mode():
     """Stop the current mode."""
