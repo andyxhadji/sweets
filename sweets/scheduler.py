@@ -42,9 +42,8 @@ class Scheduler:
         self.active_mode = mode
         self._running = True
 
-        # Render locally for preview (don't write to board yet to avoid rate limits)
-        self._last_board = mode.render()
-        self._last_update = datetime.now()
+        # Render and write immediately
+        self._update()
 
         self._thread = threading.Thread(target=self._run_loop, daemon=True)
         self._thread.start()
