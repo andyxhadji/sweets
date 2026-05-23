@@ -69,3 +69,19 @@ def test_missing_file_shows_placeholder(tmp_path):
     all_text = " ".join(codes_to_text(row) for row in board.to_array())
 
     assert "ADD REFLECTIONS" in all_text
+
+
+def test_empty_file_shows_placeholder(tmp_path):
+    """Empty reflections file should show ADD REFLECTIONS."""
+    from sweets.modes.reflections import ReflectionsMode
+
+    reflections_file = tmp_path / "reflections.yaml"
+    reflections_file.write_text("")
+
+    mode = ReflectionsMode()
+    mode.reflections_path = reflections_file
+
+    board = mode.render()
+    all_text = " ".join(codes_to_text(row) for row in board.to_array())
+
+    assert "ADD REFLECTIONS" in all_text
