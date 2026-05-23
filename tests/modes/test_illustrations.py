@@ -45,3 +45,18 @@ def test_configure_empty():
     mode = IllustrationsMode(rows=3, cols=15)
     mode.configure({})
     assert mode.current == "duck"
+
+
+def test_all_illustrations_valid():
+    """All illustrations have valid 3x15 grids."""
+    for slug, ill in ILLUSTRATIONS.items():
+        assert len(ill.grid) == 3, f"{slug} should have 3 rows"
+        for row in ill.grid:
+            assert len(row) == 15, f"{slug} rows should have 15 cols"
+            for code in row:
+                assert 0 <= code <= 70, f"{slug} has invalid code {code}"
+
+
+def test_illustration_count():
+    """Should have 15 illustrations."""
+    assert len(ILLUSTRATIONS) == 15
