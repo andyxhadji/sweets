@@ -92,9 +92,17 @@ def activate_mode(slug: str):
 def set_illustration(slug: str):
     """Change the current illustration."""
     sched = get_scheduler()
-    if sched.active_mode and hasattr(sched.active_mode, "set_illustration"):
+    if slug not in ILLUSTRATIONS:
+        return redirect(url_for("index"))
+
+    # If illustrations mode is active, update it directly
+    if sched.active_mode and sched.active_mode.slug == "illustrations":
         sched.active_mode.set_illustration(slug)
         sched.force_update()
+    else:
+        # Start illustrations mode with the selected illustration
+        sched.mode_settings.setdefault("illustrations", {})["illustration"] = slug
+        sched.start("illustrations")
     return redirect(url_for("index"))
 
 

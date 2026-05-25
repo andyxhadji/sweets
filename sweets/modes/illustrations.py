@@ -158,14 +158,29 @@ class IllustrationsMode(Mode):
         default = settings.get("default", "duck")
         if default in ILLUSTRATIONS:
             self.current = default
+        # Also check for 'illustration' key (set by web/TUI when switching)
+        illustration = settings.get("illustration")
+        if illustration and illustration in ILLUSTRATIONS:
+            self.current = illustration
 
     def render(self) -> Board:
-        """Render the current illustration to the board."""
+        """Render the current illustration to the board.
+
+        Illustrations are 3x15 (Note size). On larger boards, they are
+        centered vertically and horizontally.
+        """
         board = Board(rows=self.rows, cols=self.cols)
         illustration = ILLUSTRATIONS.get(self.current)
         if illustration:
+            # Center the 3x15 illustration on the board
+            row_offset = (self.rows - 3) // 2
+            col_offset = (self.cols - 15) // 2
             for row_idx, row_codes in enumerate(illustration.grid):
-                board.set_row(row_idx, row_codes)
+                target_row = row_idx + row_offset
+                if target_row < self.rows:
+                    # Pad row_codes to center horizontally
+                    padded = [0] * col_offset + row_codes + [0] * (self.cols - col_offset - 15)
+                    board.set_row(target_row, padded[:self.cols])
         return board
 
     def set_illustration(self, slug: str) -> None:

@@ -176,9 +176,16 @@ class SweetsApp(App):
             else:
                 ill_select.styles.display = "none"
         elif event.select.id == "illustration-select":
-            if self.scheduler.active_mode and hasattr(self.scheduler.active_mode, "set_illustration"):
-                self.scheduler.active_mode.set_illustration(str(event.value))
-                self.scheduler.force_update()
+            slug = str(event.value)
+            if slug in ILLUSTRATIONS:
+                # If illustrations mode is active, update it directly
+                if self.scheduler.active_mode and self.scheduler.active_mode.slug == "illustrations":
+                    self.scheduler.active_mode.set_illustration(slug)
+                    self.scheduler.force_update()
+                else:
+                    # Start illustrations mode with the selected illustration
+                    self.scheduler.mode_settings.setdefault("illustrations", {})["illustration"] = slug
+                    self.scheduler.start("illustrations")
                 self.update_display()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
