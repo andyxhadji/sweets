@@ -25,6 +25,27 @@ def test_cloud_client_read(mock_cloud_api, sample_board_array):
     assert board.rows[2][11] == 9  # 'I'
 
 
+def test_cloud_client_read_note_window(mock_cloud_api):
+    """CloudClient.read() should map Note boards from the displayed Cloud API window."""
+    layout = [[0] * 22 for _ in range(6)]
+    layout[1][3] = 8
+    layout[3][17] = 9
+    mock_cloud_api.add(
+        responses.GET,
+        "https://cloud.vestaboard.com/",
+        json={"currentMessage": {"layout": layout}},
+        status=200,
+    )
+
+    client = CloudClient(api_token="test-token")
+    board = client.read(rows=3, cols=15)
+
+    assert board.num_rows == 3
+    assert board.num_cols == 15
+    assert board.rows[0][0] == 8
+    assert board.rows[2][14] == 9
+
+
 def test_cloud_client_write(mock_cloud_api, sample_board):
     """CloudClient.write() should POST board as characters array."""
     mock_cloud_api.add(

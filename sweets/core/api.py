@@ -22,7 +22,7 @@ class VestaboardClient(ABC):
     """Abstract base class for Vestaboard API clients."""
 
     @abstractmethod
-    def read(self) -> Board:
+    def read(self, rows: int = DEFAULT_ROWS, cols: int = DEFAULT_COLS) -> Board:
         """Get current board state."""
         pass
 
@@ -54,8 +54,18 @@ class CloudClient(VestaboardClient):
         layout = data.get("currentMessage", {}).get("layout", [])
 
         board = Board(rows=rows, cols=cols)
-        for i, row in enumerate(layout[:rows]):
-            board.set_row(i, row[:cols])
+
+        # The Cloud API returns a 6x22 grid. Vestaboard Note displays rows
+        # 1-3 and columns 3-17 of that grid, matching the write offset.
+        is_note = rows == 3 and cols == 15
+        row_offset = 1 if is_note else 0
+        col_offset = 3 if is_note else 0
+
+        for i in range(rows):
+            source_row = i + row_offset
+            if source_row >= len(layout):
+                break
+            board.set_row(i, layout[source_row][col_offset:col_offset + cols])
 
         return board
 
@@ -122,7 +132,7 @@ class LocalClient(VestaboardClient):
         self.api_key = api_key
         self.base_url = f"http://{host}:7000"
 
-    def read(self) -> Board:
+    def read(self, rows: int = DEFAULT_ROWS, cols: int = DEFAULT_COLS) -> Board:
         """Get current board state from local API."""
         raise NotImplementedError("LocalClient not yet implemented")
 
