@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="section">
+    <div class="draw-header">
+        <h2>Draw Mode</h2>
+        <a href="{{ url_for('index') }}" class="back-link">← Back</a>
+    </div>
+
+    <div class="board draw-board" id="draw-grid" style="--board-cols: {{ board_cols }};">
+        {% for row in range(board_rows) %}
+            {% for col in range(board_cols) %}
+                <div class="cell" data-row="{{ row }}" data-col="{{ col }}"></div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+</div>
+
+<div class="section">
+    <h2>Palette</h2>
+    <div class="palette">
+        <div class="palette-row">
+            <div class="palette-item selected" data-code="0" title="Eraser"></div>
+            <div class="palette-item color-63" data-code="63" title="Red"></div>
+            <div class="palette-item color-64" data-code="64" title="Orange"></div>
+            <div class="palette-item color-65" data-code="65" title="Yellow"></div>
+            <div class="palette-item color-66" data-code="66" title="Green"></div>
+            <div class="palette-item color-67" data-code="67" title="Blue"></div>
+            <div class="palette-item color-68" data-code="68" title="Violet"></div>
+            <div class="palette-item color-69" data-code="69" title="White"></div>
+            <div class="palette-item color-70" data-code="70" title="Black"></div>
+        </div>
+        <div class="palette-row">
+            {% for i in range(26) %}
+                <div class="palette-item char" data-code="{{ i + 1 }}">{{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[i] }}</div>
+            {% endfor %}
+        </div>
+        <div class="palette-row">
+            {% for i in range(10) %}
+                <div class="palette-item char" data-code="{{ 36 if i == 0 else 26 + i }}">{{ i }}</div>
+            {% endfor %}
+            <div class="palette-item heart" data-code="62">♥</div>
+        </div>
+    </div>
+    <p class="hint">Selected: <span id="selected-display">Eraser</span></p>
+</div>
+
+<div class="section">
+    <div class="draw-actions">
+        <button type="button" id="clear-btn">Clear</button>
+        <button type="button" id="send-btn">Send to Board</button>
+    </div>
+</div>
+
+<style>
+.draw-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+.draw-header h2 {
+    margin: 0;
+}
+.back-link {
+    color: #4a9eff;
+    text-decoration: none;
+}
+.back-link:hover {
+    text-decoration: underline;
+}
+.draw-board .cell {
+    cursor: crosshair;
+    transition: opacity 0.1s;
+}
+.draw-board .cell:hover {
+    opacity: 0.7;
+}
+.palette {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.palette-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.palette-item {
+    width: 28px;
+    height: 28px;
+    border: 2px solid #444;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    background: #1a1a1a;
+    color: #fff;
+}
+.palette-item:hover {
+    border-color: #888;
+}
+.palette-item.selected {
+    border-color: #4a9eff;
+    box-shadow: 0 0 4px #4a9eff;
+}
+.palette-item.char {
+    background: #fff;
+    color: #000;
+}
+.palette-item.heart {
+    color: #ff4a4a;
+}
+.palette-item.color-63 { background: #ff0000; }
+.palette-item.color-64 { background: #ff8000; }
+.palette-item.color-65 { background: #ffff00; }
+.palette-item.color-66 { background: #00ff00; }
+.palette-item.color-67 { background: #0000ff; }
+.palette-item.color-68 { background: #8000ff; }
+.palette-item.color-69 { background: #ffffff; }
+.palette-item.color-70 { background: #000000; }
+.draw-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+</style>
+
+<script>
+const BOARD_ROWS = {{ board_rows }};
+const BOARD_COLS = {{ board_cols }};
+
+// Grid state: 2D array of character codes
+let grid = [];
+for (let r = 0; r < BOARD_ROWS; r++) {
+    grid.push(new Array(BOARD_COLS).fill(0));
+}
+
+// Current brush
+let selectedBrush = 0;
+let isDrawing = false;
+
+// Character code to display mapping
+function codeToDisplay(code) {
+    if (code === 0) return {text: '', className: ''};
+    if (code === 62) return {text: '♥', className: 'heart'};
+    if (code >= 63 && code <= 70) return {text: '', className: 'color-' + code};
+    if (code >= 1 && code <= 26) return {text: String.fromCharCode(64 + code), className: 'filled'};
+    if (code >= 27 && code <= 35) return {text: String(code - 26), className: 'filled'};
+    if (code === 36) return {text: '0', className: 'filled'};
+    return {text: '?', className: 'filled'};
+}
+
+function codeToName(code) {
+    if (code === 0) return 'Eraser';
+    if (code === 62) return 'Heart';
+    if (code === 63) return 'Red';
+    if (code === 64) return 'Orange';
+    if (code === 65) return 'Yellow';
+    if (code === 66) return 'Green';
+    if (code === 67) return 'Blue';
+    if (code === 68) return 'Violet';
+    if (code === 69) return 'White';
+    if (code === 70) return 'Black';
+    if (code >= 1 && code <= 26) return String.fromCharCode(64 + code);
+    if (code >= 27 && code <= 35) return String(code - 26);
+    if (code === 36) return '0';
+    return '?';
+}
+
+// Update cell display
+function updateCell(row, col) {
+    const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+    if (!cell) return;
+
+    const code = grid[row][col];
+    const display = codeToDisplay(code);
+
+    // Reset classes
+    cell.className = 'cell';
+    if (display.className) {
+        cell.classList.add(display.className);
+    }
+    cell.textContent = display.text;
+}
+
+// Paint a cell
+function paintCell(row, col) {
+    grid[row][col] = selectedBrush;
+    updateCell(row, col);
+}
+
+// Get cell from touch/mouse event
+function getCellFromPoint(x, y) {
+    const el = document.elementFromPoint(x, y);
+    if (el && el.classList.contains('cell') && el.dataset.row !== undefined) {
+        return {row: parseInt(el.dataset.row), col: parseInt(el.dataset.col)};
+    }
+    return null;
+}
+
+// Set up grid event listeners
+const drawGrid = document.getElementById('draw-grid');
+
+drawGrid.addEventListener('mousedown', (e) => {
+    if (e.target.classList.contains('cell')) {
+        isDrawing = true;
+        const row = parseInt(e.target.dataset.row);
+        const col = parseInt(e.target.dataset.col);
+        paintCell(row, col);
+    }
+});
+
+drawGrid.addEventListener('mouseenter', (e) => {
+    if (isDrawing && e.target.classList.contains('cell')) {
+        const row = parseInt(e.target.dataset.row);
+        const col = parseInt(e.target.dataset.col);
+        paintCell(row, col);
+    }
+}, true);
+
+drawGrid.addEventListener('mouseover', (e) => {
+    if (isDrawing && e.target.classList.contains('cell')) {
+        const row = parseInt(e.target.dataset.row);
+        const col = parseInt(e.target.dataset.col);
+        paintCell(row, col);
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    isDrawing = false;
+});
+
+// Touch support
+drawGrid.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    isDrawing = true;
+    const touch = e.touches[0];
+    const cell = getCellFromPoint(touch.clientX, touch.clientY);
+    if (cell) paintCell(cell.row, cell.col);
+}, {passive: false});
+
+drawGrid.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (!isDrawing) return;
+    const touch = e.touches[0];
+    const cell = getCellFromPoint(touch.clientX, touch.clientY);
+    if (cell) paintCell(cell.row, cell.col);
+}, {passive: false});
+
+document.addEventListener('touchend', () => {
+    isDrawing = false;
+});
+
+// Palette selection
+document.querySelectorAll('.palette-item').forEach(item => {
+    item.addEventListener('click', () => {
+        document.querySelectorAll('.palette-item').forEach(p => p.classList.remove('selected'));
+        item.classList.add('selected');
+        selectedBrush = parseInt(item.dataset.code);
+        document.getElementById('selected-display').textContent = codeToName(selectedBrush);
+    });
+});
+
+// Clear button
+document.getElementById('clear-btn').addEventListener('click', () => {
+    for (let r = 0; r < BOARD_ROWS; r++) {
+        for (let c = 0; c < BOARD_COLS; c++) {
+            grid[r][c] = 0;
+            updateCell(r, c);
+        }
+    }
+});
+
+// Send button
+document.getElementById('send-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('send-btn');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+
+    try {
+        const response = await fetch('/draw/send', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({grid: grid})
+        });
+
+        if (response.ok) {
+            window.location.href = '/';
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to send drawing');
+            btn.disabled = false;
+            btn.textContent = 'Send to Board';
+        }
+    } catch (err) {
+        alert('Network error: ' + err.message);
+        btn.disabled = false;
+        btn.textContent = 'Send to Board';
+    }
+});
+</script>
+{% endblock %}
