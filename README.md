@@ -1,4 +1,4 @@
-# Sweets
+# sweets 🍬
 
 A Python platform for controlling [Vestaboard](https://www.vestaboard.com/) displays. Provides a scheduler, display modes, and multiple interfaces (TUI and web) for managing your board.
 
