@@ -55,8 +55,12 @@ class CloudClient(VestaboardClient):
 
         board = Board(rows=rows, cols=cols)
 
+        # Validate layout is a list of lists
+        if not layout or not isinstance(layout, list) or not isinstance(layout[0], list):
+            return board
+
         # Cloud API always returns 6x22. For Note, extract the visible area.
-        if layout and len(layout) == DEFAULT_ROWS and len(layout[0]) == DEFAULT_COLS:
+        if len(layout) == DEFAULT_ROWS and len(layout[0]) == DEFAULT_COLS:
             # Full 6x22 response - extract Note window if needed
             is_note = rows == 3 and cols == 15
             row_offset = 1 if is_note else 0
