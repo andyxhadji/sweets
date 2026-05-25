@@ -14,6 +14,7 @@ A Python platform for controlling [Vestaboard](https://www.vestaboard.com/) disp
 - **Rate limit handling** - Automatic retry logic for API rate limits
 - **Custom messages** - Send one-off text messages with word wrapping and centering
 - **Color and icon support** - Use `{red}`, `{green}`, `{heart}` tokens in messages
+- **Draw mode** - Create pixel art with an interactive grid, color palette, letters, and numbers
 
 ## Installation
 
@@ -82,6 +83,7 @@ Opens a Flask dashboard at http://127.0.0.1:5000 with:
 - Live board preview
 - Message sending
 - Mode activation/control
+- Draw mode for creating pixel art
 
 ## Architecture
 
@@ -94,6 +96,7 @@ sweets/
 ├── modes/
 │   ├── base.py       # Abstract Mode class
 │   ├── clock.py      # Clock display mode
+│   ├── drawing.py    # Draw mode for pixel art
 │   └── registry.py   # Mode discovery and registration
 ├── tui/
 │   └── app.py        # Textual terminal interface
