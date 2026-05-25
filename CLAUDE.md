@@ -64,8 +64,9 @@ Tests use:
 2. Implement required class attributes: `name`, `slug`, `interval`
 3. Implement `render() -> Board` method
 4. Optionally override `configure(settings: dict)` for config support
-5. Register in `sweets/modes/__init__.py`
-6. Add tests in `tests/modes/test_your_mode.py`
+5. Add tests in `tests/modes/test_your_mode.py`
+
+Mode is auto-discovered by `registry.py` (no manual registration needed).
 
 ### Configuration
 
