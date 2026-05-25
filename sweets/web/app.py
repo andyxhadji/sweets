@@ -125,6 +125,46 @@ def draw():
     )
 
 
+@app.route("/draw/send", methods=["POST"])
+def draw_send():
+    """Send a drawing to the board."""
+    sched = get_scheduler()
+    data = request.get_json()
+
+    if not data or "grid" not in data:
+        return jsonify({"error": "Missing grid data"}), 400
+
+    grid = data["grid"]
+
+    # Validate grid is a list of lists of ints
+    if not isinstance(grid, list):
+        return jsonify({"error": "Grid must be a list"}), 400
+
+    # Validate grid dimensions match board
+    if len(grid) != sched.board_rows:
+        return jsonify({"error": f"Grid must have {sched.board_rows} rows"}), 400
+
+    for i, row in enumerate(grid):
+        if not isinstance(row, list):
+            return jsonify({"error": "Grid rows must be lists"}), 400
+        if len(row) != sched.board_cols:
+            return jsonify({"error": f"Row {i} must have {sched.board_cols} columns"}), 400
+        for val in row:
+            if not isinstance(val, int) or val < 0 or val > 70:
+                return jsonify({"error": "Grid values must be integers 0-70"}), 400
+
+    # Store grid in mode settings and start drawing mode
+    sched.mode_settings["drawing"] = {"grid": grid}
+    try:
+        sched.start("drawing")
+    except RateLimitError:
+        return jsonify({"error": "Rate limited - please wait ~15 seconds"}), 429
+    except QuietHoursError:
+        return jsonify({"error": "Vestaboard is in quiet hours"}), 423
+
+    return jsonify({"success": True})
+
+
 def main():
     """Entry point for the web application."""
     global scheduler
