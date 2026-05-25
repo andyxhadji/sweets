@@ -114,6 +114,17 @@ def stop_mode():
     return redirect(url_for("index"))
 
 
+@app.route("/draw")
+def draw():
+    """Draw mode page."""
+    sched = get_scheduler()
+    return render_template(
+        "draw.html",
+        board_rows=sched.board_rows,
+        board_cols=sched.board_cols,
+    )
+
+
 def main():
     """Entry point for the web application."""
     global scheduler
