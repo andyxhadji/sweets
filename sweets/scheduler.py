@@ -70,6 +70,17 @@ class Scheduler:
         """Return the last rendered board."""
         return self._last_board
 
+    def refresh_current_board(self) -> Board | None:
+        """Read the board currently displayed by Vestaboard."""
+        try:
+            board = self.client.read(rows=self.board_rows, cols=self.board_cols)
+        except Exception as e:
+            print(f"Error reading current board: {e}")
+            return self._last_board
+
+        self._last_board = board
+        return board
+
     def send_message(self, text: str) -> bool:
         """Send a one-off message (doesn't affect active mode)."""
         board = Board.from_text(text, rows=self.board_rows, cols=self.board_cols)

@@ -22,7 +22,7 @@ class VestaboardClient(ABC):
     """Abstract base class for Vestaboard API clients."""
 
     @abstractmethod
-    def read(self) -> Board:
+    def read(self, rows: int = DEFAULT_ROWS, cols: int = DEFAULT_COLS) -> Board:
         """Get current board state."""
         pass
 
@@ -54,8 +54,22 @@ class CloudClient(VestaboardClient):
         layout = data.get("currentMessage", {}).get("layout", [])
 
         board = Board(rows=rows, cols=cols)
-        for i, row in enumerate(layout[:rows]):
-            board.set_row(i, row[:cols])
+
+        # Cloud API always returns 6x22. For Note, extract the visible area.
+        if layout and len(layout) == DEFAULT_ROWS and len(layout[0]) == DEFAULT_COLS:
+            # Full 6x22 response - extract Note window if needed
+            is_note = rows == 3 and cols == 15
+            row_offset = 1 if is_note else 0
+            col_offset = 3 if is_note else 0
+
+            for i in range(rows):
+                source_row = i + row_offset
+                if source_row < len(layout):
+                    board.set_row(i, layout[source_row][col_offset:col_offset + cols])
+        else:
+            # Response matches requested size or is smaller
+            for i, row in enumerate(layout[:rows]):
+                board.set_row(i, row[:cols])
 
         return board
 
@@ -69,25 +83,8 @@ class CloudClient(VestaboardClient):
         Raises:
             RateLimitError: If rate limited and retry=False
         """
-        # Cloud API always expects 6x22 array, even for Vestaboard Note (3x15)
-        # Note displays rows 1-3 and cols 3-17 of the 6x22 grid
-        api_array = [[0] * DEFAULT_COLS for _ in range(DEFAULT_ROWS)]
-        board_array = board.to_array()
-
-        # Detect if this is a Note-sized board (3x15) and offset accordingly
-        is_note = board.num_rows == 3 and board.num_cols == 15
-        row_offset = 1 if is_note else 0
-        col_offset = 3 if is_note else 0
-
-        for i, row in enumerate(board_array[:DEFAULT_ROWS]):
-            target_row = i + row_offset
-            if target_row >= DEFAULT_ROWS:
-                break
-            for j, val in enumerate(row[:DEFAULT_COLS]):
-                target_col = j + col_offset
-                if target_col < DEFAULT_COLS:
-                    api_array[target_row][target_col] = val
-        payload = {"characters": api_array}
+        # Send board array directly - Cloud API accepts both 6x22 and 3x15
+        payload = {"characters": board.to_array()}
         response = requests.post(
             f"{self.base_url}/",
             headers=self._headers(),
@@ -122,7 +119,7 @@ class LocalClient(VestaboardClient):
         self.api_key = api_key
         self.base_url = f"http://{host}:7000"
 
-    def read(self) -> Board:
+    def read(self, rows: int = DEFAULT_ROWS, cols: int = DEFAULT_COLS) -> Board:
         """Get current board state from local API."""
         raise NotImplementedError("LocalClient not yet implemented")
 

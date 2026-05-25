@@ -30,10 +30,9 @@ def index():
     status = sched.get_status()
     modes = get_all_modes()
 
-    # Get current board display
-    board_display = None
-    if sched.get_last_board() is not None:
-        board_display = sched.get_last_board().to_array()
+    # Get the board currently displayed on the Vestaboard.
+    current_board = sched.refresh_current_board()
+    board_display = current_board.to_array() if current_board is not None else None
 
     # Get illustrations for dropdown
     illustrations = [(slug, ill.name) for slug, ill in ILLUSTRATIONS.items()]
