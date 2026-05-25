@@ -100,8 +100,11 @@ class Scheduler:
     def _run_loop(self) -> None:
         """Background loop that updates at mode's interval."""
         while self._running and self.active_mode is not None:
-            # Sleep in small increments to allow quick shutdown
             interval = self.active_mode.interval
+            # Static modes (interval=None) don't need periodic updates
+            if interval is None:
+                return
+            # Sleep in small increments to allow quick shutdown
             for _ in range(interval):
                 if not self._running:
                     return
