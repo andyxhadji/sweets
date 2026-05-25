@@ -289,7 +289,9 @@ document.getElementById('send-btn').addEventListener('click', async () => {
         });
 
         if (response.ok) {
-            window.location.href = '/';
+            btn.disabled = false;
+            btn.textContent = 'Sent!';
+            setTimeout(() => { btn.textContent = 'Send to Board'; }, 2000);
         } else {
             const data = await response.json();
             alert(data.error || 'Failed to send drawing');
