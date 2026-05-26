@@ -117,16 +117,47 @@ class CloudClient(VestaboardClient):
 
 
 class LocalClient(VestaboardClient):
-    """Vestaboard Local API client (stubbed for future implementation)."""
+    """Vestaboard Local API client."""
 
     def __init__(self, api_key: str, host: str = "vestaboard.local") -> None:
         self.api_key = api_key
         self.base_url = f"http://{host}:7000"
 
+    def _headers(self) -> dict[str, str]:
+        return {
+            "X-Vestaboard-Local-Api-Key": self.api_key,
+            "Content-Type": "application/json",
+        }
+
     def read(self, rows: int = DEFAULT_ROWS, cols: int = DEFAULT_COLS) -> Board:
         """Get current board state from local API."""
-        raise NotImplementedError("LocalClient not yet implemented")
+        response = requests.get(
+            f"{self.base_url}/local-api/message",
+            headers=self._headers(),
+        )
+        response.raise_for_status()
+
+        data = response.json()
+        layout = data.get("message", [])
+
+        board = Board(rows=rows, cols=cols)
+
+        if not layout or not isinstance(layout, list):
+            return board
+
+        for i, row in enumerate(layout[:rows]):
+            if isinstance(row, list):
+                board.set_row(i, row[:cols])
+
+        return board
 
     def write(self, board: Board) -> bool:
         """Send board state to local API."""
-        raise NotImplementedError("LocalClient not yet implemented")
+        payload = board.to_array()
+        response = requests.post(
+            f"{self.base_url}/local-api/message",
+            headers=self._headers(),
+            json=payload,
+        )
+        response.raise_for_status()
+        return True
